@@ -7,6 +7,7 @@ interface Window {
       initDataUnsafe?: any;
       ready: () => void;
       close: () => void;
+      openTelegramLink?: (url: string) => void;
       MainButton: {
         text: string;
         isVisible: boolean;
@@ -17,4 +18,3 @@ interface Window {
     };
   };
 }
-

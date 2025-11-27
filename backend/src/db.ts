@@ -100,6 +100,21 @@ export async function initDb() {
       value jsonb not null,
       updated_at timestamptz not null default now()
     );
+
+    create table if not exists market_gifts (
+      id serial primary key,
+      external_id text,
+      title text not null,
+      subtitle text,
+      category text,
+      price_points integer not null,
+      image_url text,
+      gradient_key text,
+      is_active boolean not null default true,
+      position integer not null default 0,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    );
   `);
 }
 

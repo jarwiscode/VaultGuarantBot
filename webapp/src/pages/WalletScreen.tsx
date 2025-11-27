@@ -36,6 +36,31 @@ export const WalletScreen: React.FC = () => {
   if (loading) return <Loader text="Кошелёк..." />;
   if (!data) return <div className="center">Кошелек не найден</div>;
 
+  async function handleWalletPayTopup() {
+    const amount = window.prompt("Сумма пополнения в TON", "1");
+    if (!amount) return;
+
+    try {
+      const res = await api.post("/app/wallet/order", {
+        amount,
+        currencyCode: "TON",
+        description: "Пополнение баланса Vault Guarant",
+      });
+      const link: string | undefined = res.data.directPayLink;
+      if (!link) {
+        window.alert("Не удалось получить ссылку оплаты Wallet.");
+        return;
+      }
+      if (window.Telegram?.WebApp?.openTelegramLink) {
+        window.Telegram.WebApp.openTelegramLink(link);
+      } else {
+        window.open(link, "_blank");
+      }
+    } catch {
+      window.alert("Ошибка при создании платежа Wallet.");
+    }
+  }
+
   return (
     <div>
       <h2>Мой кошелек</h2>
@@ -53,6 +78,10 @@ export const WalletScreen: React.FC = () => {
         }}
       >
         Пополнить (демо +100)
+      </button>
+
+      <button className="primary mt-2" onClick={handleWalletPayTopup}>
+        Пополнить через Wallet
       </button>
 
       <h3 className="mt-3">Последние транзакции</h3>
@@ -73,4 +102,3 @@ export const WalletScreen: React.FC = () => {
     </div>
   );
 };
-
