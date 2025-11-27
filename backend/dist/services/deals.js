@@ -8,8 +8,6 @@ exports.updateDealStatus = updateDealStatus;
 const db_1 = require("../db");
 const zod_1 = require("zod");
 exports.createDealSchema = zod_1.z.object({
-    buyerId: zod_1.z.number().int().positive(),
-    sellerId: zod_1.z.number().int().positive(),
     initiatorId: zod_1.z.number().int().positive(),
     amount: zod_1.z.number().positive(),
     currency: zod_1.z.string().default("USDT"),
@@ -23,6 +21,8 @@ async function createDeal(input) {
     const code = generateDealCode();
     const commissionPercent = 1.0;
     const commissionAmount = (input.amount * commissionPercent) / 100;
+    const buyerId = input.initiatorId;
+    const sellerId = input.initiatorId;
     const res = await db_1.pool.query(`
       insert into deals (
         code, buyer_id, seller_id, initiator_id, amount, currency,
@@ -32,8 +32,8 @@ async function createDeal(input) {
       returning *;
     `, [
         code,
-        input.buyerId,
-        input.sellerId,
+        buyerId,
+        sellerId,
         input.initiatorId,
         input.amount,
         input.currency,

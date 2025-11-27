@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { api } from "../api";
 
 export const NewDealScreen: React.FC = () => {
-  const [buyerId, setBuyerId] = useState("");
-  const [sellerId, setSellerId] = useState("");
   const [amount, setAmount] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -12,8 +10,6 @@ export const NewDealScreen: React.FC = () => {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const res = await api.post("/app/deals", {
-      buyerId: Number(buyerId),
-      sellerId: Number(sellerId),
       amount: Number(amount),
       currency: "USDT",
       title,
@@ -26,22 +22,6 @@ export const NewDealScreen: React.FC = () => {
     <div>
       <h2>Создать сделку</h2>
       <form className="form" onSubmit={submit}>
-        <label>
-          ID покупателя (внутр.):
-          <input
-            value={buyerId}
-            onChange={(e) => setBuyerId(e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          ID продавца (внутр.):
-          <input
-            value={sellerId}
-            onChange={(e) => setSellerId(e.target.value)}
-            required
-          />
-        </label>
         <label>
           Название:
           <input
@@ -81,4 +61,3 @@ export const NewDealScreen: React.FC = () => {
     </div>
   );
 };
-

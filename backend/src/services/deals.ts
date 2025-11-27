@@ -2,8 +2,6 @@ import { pool } from "../db";
 import { z } from "zod";
 
 export const createDealSchema = z.object({
-  buyerId: z.number().int().positive(),
-  sellerId: z.number().int().positive(),
   initiatorId: z.number().int().positive(),
   amount: z.number().positive(),
   currency: z.string().default("USDT"),
@@ -22,6 +20,9 @@ export async function createDeal(input: CreateDealInput) {
   const commissionPercent = 1.0;
   const commissionAmount = (input.amount * commissionPercent) / 100;
 
+  const buyerId = input.initiatorId;
+  const sellerId = input.initiatorId;
+
   const res = await pool.query(
     `
       insert into deals (
@@ -33,8 +34,8 @@ export async function createDeal(input: CreateDealInput) {
     `,
     [
       code,
-      input.buyerId,
-      input.sellerId,
+      buyerId,
+      sellerId,
       input.initiatorId,
       input.amount,
       input.currency,
@@ -82,4 +83,3 @@ export async function updateDealStatus(
   );
   return res.rows[0] ?? null;
 }
-
