@@ -27,6 +27,8 @@ export function applyTelegramTheme() {
     "--tg-hint-color": theme.hint_color,
     "--tg-button-color": theme.button_color,
     "--tg-button-text-color": theme.button_text_color,
+    // Update card background based on theme
+    "--tg-card-bg-color": theme.secondary_bg_color || theme.bg_color,
   };
 
   Object.entries(mapping).forEach(([cssVar, color]) => {

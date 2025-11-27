@@ -67,6 +67,11 @@ export async function getDealById(id: number) {
   return res.rows[0] ?? null;
 }
 
+export async function getDealByCode(code: string) {
+  const res = await pool.query("select * from deals where code = $1", [code]);
+  return res.rows[0] ?? null;
+}
+
 export async function updateDealStatus(
   id: number,
   status:

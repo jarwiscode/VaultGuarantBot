@@ -7,6 +7,7 @@ import {
   createDeal,
   listUserDeals,
   getDealById,
+  getDealByCode,
   updateDealStatus,
 } from "../services/deals";
 import { getLoyaltySummary } from "../services/loyalty";
@@ -66,6 +67,14 @@ router.get("/deals/:id", async (req: AuthRequest, res) => {
   if (!req.userId) return res.status(401).json({ error: "UNAUTHORIZED" });
   const id = Number(req.params.id);
   const deal = await getDealById(id);
+  if (!deal) return res.status(404).json({ error: "NOT_FOUND" });
+  return res.json(deal);
+});
+
+router.get("/deals/code/:code", async (req: AuthRequest, res) => {
+  if (!req.userId) return res.status(401).json({ error: "UNAUTHORIZED" });
+  const code = req.params.code;
+  const deal = await getDealByCode(code);
   if (!deal) return res.status(404).json({ error: "NOT_FOUND" });
   return res.json(deal);
 });

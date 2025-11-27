@@ -47,4 +47,24 @@ router.post("/auth/telegram", async (req, res) => {
   }
 });
 
+router.get("/bot/info", async (_req, res) => {
+  if (!config.botToken) {
+    return res.status(503).json({ error: "BOT_NOT_CONFIGURED" });
+  }
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${config.botToken}/getMe`);
+    const data = await response.json();
+    if (data.ok) {
+      return res.json({
+        username: data.result.username,
+        firstName: data.result.first_name,
+      });
+    }
+    return res.status(500).json({ error: "BOT_INFO_ERROR" });
+  } catch {
+    return res.status(500).json({ error: "BOT_INFO_ERROR" });
+  }
+});
+
 export default router;
