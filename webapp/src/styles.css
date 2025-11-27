@@ -1,3 +1,14 @@
+:root {
+  --tg-bg-color: #050810;
+  --tg-secondary-bg-color: #020617;
+  --tg-card-bg-color: #101523;
+  --tg-text-color: #f7f9ff;
+  --tg-hint-color: #8b94aa;
+  --tg-button-color: #3b82f6;
+  --tg-button-text-color: #ffffff;
+  --tg-border-color: rgba(255, 255, 255, 0.06);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -6,8 +17,8 @@
 }
 
 body {
-  background: #050810;
-  color: #f7f9ff;
+  background: var(--tg-bg-color);
+  color: var(--tg-text-color);
 }
 
 .app {
@@ -39,7 +50,7 @@ body {
   padding: 10px 4px;
   font-size: 11px;
   background: transparent;
-  color: #a9b1c4;
+  color: var(--tg-hint-color);
   border: none;
   display: flex;
   flex-direction: column;
@@ -48,7 +59,7 @@ body {
 }
 
 .bottom-nav button.active {
-  color: #fff;
+  color: var(--tg-button-text-color);
   font-weight: 600;
 }
 
@@ -76,8 +87,8 @@ body {
   border-radius: 999px;
   padding: 6px 14px;
   border: none;
-  background: #111827;
-  color: #e5e7eb;
+  background: var(--tg-secondary-bg-color);
+  color: var(--tg-text-color);
   font-size: 12px;
 }
 
@@ -91,7 +102,7 @@ body {
   text-align: center;
   font-size: 13px;
   font-weight: 600;
-  background: #020617;
+  background: var(--tg-secondary-bg-color);
   border-radius: 999px;
   padding: 6px 12px;
 }
@@ -102,7 +113,7 @@ body {
   gap: 4px;
   padding: 6px 10px;
   border-radius: 999px;
-  background: #020617;
+  background: var(--tg-secondary-bg-color);
   font-size: 12px;
 }
 
@@ -114,7 +125,7 @@ body {
 .segmented {
   display: flex;
   gap: 8px;
-  background: #020617;
+  background: var(--tg-secondary-bg-color);
   padding: 4px;
   border-radius: 999px;
   margin-bottom: 12px;
@@ -127,12 +138,12 @@ body {
   padding: 8px 0;
   font-size: 12px;
   background: transparent;
-  color: #9ca3af;
+  color: var(--tg-hint-color);
 }
 
 .segmented-btn.active {
-  background: #2563eb;
-  color: #fff;
+  background: var(--tg-button-color);
+  color: var(--tg-button-text-color);
 }
 
 .market-grid {
@@ -144,7 +155,7 @@ body {
 .market-card {
   border-radius: 16px;
   overflow: hidden;
-  background: #0b1120;
+  background: var(--tg-card-bg-color);
   display: flex;
   flex-direction: column;
   min-height: 170px;
@@ -203,10 +214,10 @@ body {
 }
 
 .card {
-  background: linear-gradient(135deg, #101523, #050810);
+  background: linear-gradient(135deg, var(--tg-card-bg-color), var(--tg-bg-color));
   border-radius: 12px;
   padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--tg-border-color);
 }
 
 .list {
@@ -242,7 +253,7 @@ textarea {
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(2, 4, 8, 0.9);
-  color: #fff;
+  color: var(--tg-text-color);
 }
 
 button {
@@ -251,8 +262,8 @@ button {
 
 button.primary {
   padding: 10px;
-  background: #3b82f6;
-  color: #fff;
+  background: var(--tg-button-color);
+  color: var(--tg-button-text-color);
   border: none;
   font-weight: 600;
 }
@@ -286,7 +297,7 @@ button.primary {
 }
 
 .muted {
-  color: #8b94aa;
+  color: var(--tg-hint-color);
   font-size: 12px;
 }
 
