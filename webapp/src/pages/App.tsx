@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useTelegramAuth } from "../hooks/useTelegramAuth";
 import { Loader } from "../components/Loader";
-import { WalletScreen } from "./WalletScreen";
-import { DealsScreen } from "./DealsScreen";
-import { NewDealScreen } from "./NewDealScreen";
-import { SettingsScreen } from "./SettingsScreen";
+import { MarketScreen } from "./MarketScreen";
+import { ActivityScreen } from "./ActivityScreen";
+import { StorageScreen } from "./StorageScreen";
+import { ProfileScreen } from "./ProfileScreen";
 
-type Tab = "wallet" | "new" | "deals" | "settings";
+type Tab = "market" | "activity" | "storage" | "profile";
 
 export const App: React.FC = () => {
   const { user, loading, error } = useTelegramAuth();
-  const [tab, setTab] = useState<Tab>("wallet");
+  const [tab, setTab] = useState<Tab>("market");
 
   useEffect(() => {
     window.Telegram?.WebApp?.ready();
@@ -31,46 +31,50 @@ export const App: React.FC = () => {
 
   if (error || !user) return <div className="center">Ошибка авторизации</div>;
 
+  const points = (user as any).loyaltyPoints ?? 0;
+
   return (
     <div className="app">
-      <header className="header">
-        <div className="title">Vault Guarant</div>
-        <div className="subtitle">
-          {user.username ? `@${user.username}` : user.firstName}
-        </div>
-      </header>
-
       <main className="content">
-        {tab === "wallet" && <WalletScreen />}
-        {tab === "new" && <NewDealScreen />}
-        {tab === "deals" && <DealsScreen />}
-        {tab === "settings" && <SettingsScreen />}
+        {tab === "market" && <MarketScreen points={points} />}
+        {tab === "activity" && <ActivityScreen />}
+        {tab === "storage" && <StorageScreen />}
+        {tab === "profile" && (
+          <ProfileScreen
+            username={user.username}
+            firstName={user.firstName}
+          />
+        )}
       </main>
 
       <nav className="bottom-nav">
         <button
-          className={tab === "wallet" ? "active" : ""}
-          onClick={() => setTab("wallet")}
+          className={tab === "market" ? "active" : ""}
+          onClick={() => setTab("market")}
         >
-          Мой кошелек
+          <span className="nav-icon">🛒</span>
+          <span className="nav-label">Market</span>
         </button>
         <button
-          className={tab === "new" ? "active" : ""}
-          onClick={() => setTab("new")}
+          className={tab === "activity" ? "active" : ""}
+          onClick={() => setTab("activity")}
         >
-          Создать сделку
+          <span className="nav-icon">📊</span>
+          <span className="nav-label">Activity</span>
         </button>
         <button
-          className={tab === "deals" ? "active" : ""}
-          onClick={() => setTab("deals")}
+          className={tab === "storage" ? "active" : ""}
+          onClick={() => setTab("storage")}
         >
-          Мои сделки
+          <span className="nav-icon">📦</span>
+          <span className="nav-label">Storage</span>
         </button>
         <button
-          className={tab === "settings" ? "active" : ""}
-          onClick={() => setTab("settings")}
+          className={tab === "profile" ? "active" : ""}
+          onClick={() => setTab("profile")}
         >
-          Настройки
+          <span className="nav-icon">👤</span>
+          <span className="nav-label">Profile</span>
         </button>
       </nav>
     </div>
