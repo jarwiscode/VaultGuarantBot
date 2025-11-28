@@ -9,19 +9,37 @@ if (window.Telegram?.WebApp) {
   const webApp = window.Telegram.WebApp;
   webApp.ready();
   webApp.expand();
+  
+  // Apply theme first to detect light/dark
+  applyTelegramTheme();
+  
+  // Set header and background colors based on theme
+  const theme = webApp?.themeParams;
+  const bgColor = theme?.bg_color || "#0e1621";
+  const normalizedBg = bgColor.startsWith("#") ? bgColor : `#${bgColor}`;
+  
   if (webApp.setHeaderColor) {
-    webApp.setHeaderColor("#0e1621");
+    webApp.setHeaderColor(normalizedBg);
   }
   if (webApp.setBackgroundColor) {
-    webApp.setBackgroundColor("#0e1621");
+    webApp.setBackgroundColor(normalizedBg);
   }
-  
-  // Apply theme initially
-  applyTelegramTheme();
   
   // Re-apply theme when it changes
   if (webApp.onEvent) {
-    webApp.onEvent("themeChanged", applyTelegramTheme);
+    webApp.onEvent("themeChanged", () => {
+      applyTelegramTheme();
+      // Update header/background colors when theme changes
+      const updatedTheme = webApp?.themeParams;
+      const updatedBg = updatedTheme?.bg_color || "#0e1621";
+      const normalizedUpdatedBg = updatedBg.startsWith("#") ? updatedBg : `#${updatedBg}`;
+      if (webApp.setHeaderColor) {
+        webApp.setHeaderColor(normalizedUpdatedBg);
+      }
+      if (webApp.setBackgroundColor) {
+        webApp.setBackgroundColor(normalizedUpdatedBg);
+      }
+    });
   }
   
   // Also re-apply on viewport changes

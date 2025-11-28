@@ -8,6 +8,15 @@ interface Window {
         start_param?: string;
         [key: string]: any;
       };
+      themeParams?: {
+        bg_color?: string;
+        secondary_bg_color?: string;
+        text_color?: string;
+        hint_color?: string;
+        button_color?: string;
+        button_text_color?: string;
+        [key: string]: any;
+      };
       ready: () => void;
       close: () => void;
       expand: () => void;

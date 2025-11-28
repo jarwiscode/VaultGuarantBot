@@ -105,6 +105,16 @@ h3 {
   backdrop-filter: blur(10px);
 }
 
+/* Light theme bottom nav */
+.theme-light .bottom-nav {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Dark theme bottom nav */
+.theme-dark .bottom-nav {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
 .bottom-nav button {
   flex: 1;
   padding: 8px 12px;
@@ -127,6 +137,16 @@ h3 {
 
 .bottom-nav button.active {
   color: var(--telegram-primary);
+  background: rgba(51, 144, 236, 0.1);
+}
+
+/* Light theme active button */
+.theme-light .bottom-nav button.active {
+  background: rgba(51, 144, 236, 0.12);
+}
+
+/* Dark theme active button */
+.theme-dark .bottom-nav button.active {
   background: rgba(51, 144, 236, 0.1);
 }
 
@@ -260,6 +280,16 @@ h3 {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
+/* Light theme market card */
+.theme-light .market-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* Dark theme market card */
+.theme-dark .market-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
 .market-card-body {
   flex: 1;
   padding: 14px;
@@ -321,6 +351,20 @@ h3 {
   background: radial-gradient(circle at top left, #a855f7, #0f172a);
 }
 
+/* Light theme market card gradients */
+.theme-light .market-card-1 {
+  background: radial-gradient(circle at top left, #fb7185, #fef2f2);
+}
+.theme-light .market-card-2 {
+  background: radial-gradient(circle at top left, #4ade80, #f0fdf4);
+}
+.theme-light .market-card-3 {
+  background: radial-gradient(circle at top left, #38bdf8, #f0f9ff);
+}
+.theme-light .market-card-4 {
+  background: radial-gradient(circle at top left, #a855f7, #faf5ff);
+}
+
 .card {
   background: var(--tg-card-bg-color);
   border-radius: 12px;
@@ -328,6 +372,15 @@ h3 {
   border: none;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   margin-bottom: 16px;
+}
+
+/* Light theme specific adjustments */
+.theme-light .card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.theme-dark .card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .card:last-child {
@@ -789,6 +842,16 @@ button.primary:disabled {
   box-sizing: border-box;
 }
 
+/* Light theme modal overlay */
+.theme-light .modal-overlay {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* Dark theme modal overlay */
+.theme-dark .modal-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
 .modal-content {
   background: var(--tg-card-bg-color);
   border-radius: 16px;
@@ -799,6 +862,16 @@ button.primary:disabled {
   flex-direction: column;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   overflow: hidden;
+}
+
+/* Light theme modal */
+.theme-light .modal-content {
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark theme modal */
+.theme-dark .modal-content {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .modal-header {
