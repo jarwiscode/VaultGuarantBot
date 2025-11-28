@@ -24,6 +24,17 @@ import { getLoyaltySummary } from "../services/loyalty";
 import { listActiveGifts } from "../services/market";
 import { config } from "../config";
 import { getUserById } from "../services/users";
+import {
+  createAppealSchema,
+  createAppeal,
+  getUserAppeals,
+} from "../services/appeals";
+import {
+  notifyDealAccepted,
+  notifyItemTransferred,
+  notifyItemReceived,
+  notifyDealCancelled,
+} from "../services/notifications";
 
 const walletOrderSchema = z.object({
   amount: z.string().min(1),
@@ -127,6 +138,9 @@ router.post("/deals/:id/accept", async (req: AuthRequest, res) => {
       deal.currency
     );
     
+    // Send notifications
+    await notifyDealAccepted(deal);
+    
     return res.json(deal);
   } catch (error: any) {
     if (error.message === "DEAL_NOT_FOUND") {
@@ -153,6 +167,10 @@ router.post("/deals/:id/transfer", async (req: AuthRequest, res) => {
   try {
     const id = Number(req.params.id);
     const deal = await markItemTransferred(id, req.userId);
+    
+    // Send notifications
+    await notifyItemTransferred(deal);
+    
     return res.json(deal);
   } catch (error: any) {
     if (error.message === "DEAL_NOT_FOUND") {
@@ -186,6 +204,9 @@ router.post("/deals/:id/receive", async (req: AuthRequest, res) => {
     // Mark deal as completed
     await updateDealStatus(deal.id, "completed");
     const completedDeal = await getDealById(deal.id);
+    
+    // Send notifications
+    await notifyItemReceived(completedDeal);
     
     return res.json(completedDeal);
   } catch (error: any) {
@@ -226,6 +247,10 @@ router.post("/deals/:id/cancel", async (req: AuthRequest, res) => {
     }
     
     const cancelled = await cancelDeal(id, req.userId);
+    
+    // Send notifications
+    await notifyDealCancelled(cancelled, req.userId);
+    
     return res.json(cancelled);
   } catch (error: any) {
     if (error.message === "DEAL_NOT_FOUND") {
@@ -237,6 +262,43 @@ router.post("/deals/:id/cancel", async (req: AuthRequest, res) => {
     if (error.message === "CANNOT_CANCEL_COMPLETED") {
       return res.status(400).json({ error: "CANNOT_CANCEL_COMPLETED" });
     }
+    return res.status(500).json({ error: "INTERNAL_ERROR" });
+  }
+});
+
+router.post("/deals/:id/appeal", async (req: AuthRequest, res) => {
+  if (!req.userId) return res.status(401).json({ error: "UNAUTHORIZED" });
+  try {
+    const dealId = Number(req.params.id);
+    const parsed = createAppealSchema.safeParse({
+      ...req.body,
+      dealId,
+      userId: req.userId,
+    });
+
+    if (!parsed.success) {
+      return res.status(400).json({ error: "INVALID_BODY" });
+    }
+
+    const appeal = await createAppeal(parsed.data);
+    return res.json(appeal);
+  } catch (error: any) {
+    if (error.message === "DEAL_NOT_FOUND") {
+      return res.status(404).json({ error: "DEAL_NOT_FOUND" });
+    }
+    if (error.message === "NOT_AUTHORIZED") {
+      return res.status(403).json({ error: "NOT_AUTHORIZED" });
+    }
+    return res.status(500).json({ error: "INTERNAL_ERROR" });
+  }
+});
+
+router.get("/me/appeals", async (req: AuthRequest, res) => {
+  if (!req.userId) return res.status(401).json({ error: "UNAUTHORIZED" });
+  try {
+    const appeals = await getUserAppeals(req.userId);
+    return res.json(appeals);
+  } catch (error) {
     return res.status(500).json({ error: "INTERNAL_ERROR" });
   }
 });

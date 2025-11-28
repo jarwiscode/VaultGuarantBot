@@ -7,6 +7,7 @@ import publicRoutes from "./routes/public";
 import appRoutes from "./routes/app";
 import adminRoutes from "./routes/admin";
 import { createBot } from "./bot";
+import { setBotInstance } from "./services/notifications";
 
 async function main() {
   if (config.dbEnabled) {
@@ -41,6 +42,7 @@ async function main() {
 
   if (config.botToken) {
     const bot = createBot();
+    setBotInstance(bot);
     bot.start();
     // eslint-disable-next-line no-console
     console.log("Telegram bot started (long polling).");

@@ -125,6 +125,21 @@ export async function initDb() {
       created_at timestamptz not null default now(),
       updated_at timestamptz not null default now()
     );
+
+    create table if not exists appeals (
+      id serial primary key,
+      deal_id integer not null references deals(id),
+      user_id integer not null references users(id),
+      comment text not null,
+      attachment_url text,
+      attachment_type varchar(32),
+      status varchar(16) not null default 'pending',
+      admin_response text,
+      resolved_by integer references users(id),
+      resolved_at timestamptz,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    );
   `);
 }
 

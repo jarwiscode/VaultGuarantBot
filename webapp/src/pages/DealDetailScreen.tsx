@@ -60,6 +60,10 @@ export const DealDetailScreen: React.FC<DealDetailScreenProps> = ({
   const [botUsername, setBotUsername] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showAppealForm, setShowAppealForm] = useState(false);
+  const [appealComment, setAppealComment] = useState("");
+  const [appealFile, setAppealFile] = useState<File | null>(null);
+  const [appealLoading, setAppealLoading] = useState(false);
 
   async function loadDeal() {
     try {
@@ -242,6 +246,83 @@ export const DealDetailScreen: React.FC<DealDetailScreenProps> = ({
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Limit file size to 5MB
+      if (file.size > 5 * 1024 * 1024) {
+        if (window.Telegram?.WebApp?.showAlert) {
+          window.Telegram.WebApp.showAlert("Размер файла не должен превышать 5 МБ");
+        } else {
+          alert("Размер файла не должен превышать 5 МБ");
+        }
+        return;
+      }
+      setAppealFile(file);
+    }
+  };
+
+  const handleSubmitAppeal = async () => {
+    if (!deal || !appealComment.trim()) {
+      if (window.Telegram?.WebApp?.showAlert) {
+        window.Telegram.WebApp.showAlert("Пожалуйста, введите комментарий");
+      } else {
+        alert("Пожалуйста, введите комментарий");
+      }
+      return;
+    }
+
+    setAppealLoading(true);
+    try {
+      let attachment: { data: string; type: string; filename?: string } | undefined;
+
+      if (appealFile) {
+        // Convert file to base64
+        const reader = new FileReader();
+        attachment = await new Promise((resolve, reject) => {
+          reader.onload = () => {
+            const result = reader.result as string;
+            // Remove data URL prefix if present
+            const base64 = result.includes(",") ? result.split(",")[1] : result;
+            resolve({
+              data: base64,
+              type: appealFile.type || "application/octet-stream",
+              filename: appealFile.name,
+            });
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(appealFile);
+        });
+      }
+
+      await api.post(`/app/deals/${dealId}/appeal`, {
+        comment: appealComment,
+        attachment,
+      });
+
+      setShowAppealForm(false);
+      setAppealComment("");
+      setAppealFile(null);
+
+      if (window.Telegram?.WebApp?.showAlert) {
+        window.Telegram.WebApp.showAlert("Апелляция успешно подана. Мы рассмотрим её в ближайшее время.");
+      } else {
+        alert("Апелляция успешно подана. Мы рассмотрим её в ближайшее время.");
+      }
+    } catch (error: any) {
+      const message = error.response?.data?.error === "NOT_AUTHORIZED"
+        ? "Вы не можете подать апелляцию по этой сделке"
+        : "Ошибка при подаче апелляции";
+      if (window.Telegram?.WebApp?.showAlert) {
+        window.Telegram.WebApp.showAlert(message);
+      } else {
+        alert(message);
+      }
+    } finally {
+      setAppealLoading(false);
+    }
+  };
+
   if (loading) return <Loader text="Загрузка сделки..." />;
   if (!deal) return <div className="center">Сделка не найдена</div>;
 
@@ -389,6 +470,89 @@ export const DealDetailScreen: React.FC<DealDetailScreenProps> = ({
               {actionLoading ? "Обработка..." : "Отменить сделку"}
             </button>
           )}
+        </div>
+      )}
+
+      {/* Appeal button - always visible */}
+      <div className="card">
+        <button
+          className="primary"
+          onClick={() => setShowAppealForm(true)}
+          style={{ background: "#f59e0b" }}
+        >
+          Подать апелляцию
+        </button>
+      </div>
+
+      {/* Appeal form modal */}
+      {showAppealForm && (
+        <div className="modal-overlay" onClick={() => setShowAppealForm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Подача апелляции</h3>
+              <button
+                className="modal-close"
+                onClick={() => setShowAppealForm(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Номер сделки</label>
+                <input
+                  type="text"
+                  value={deal?.code || ""}
+                  disabled
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>Комментарий *</label>
+                <textarea
+                  value={appealComment}
+                  onChange={(e) => setAppealComment(e.target.value)}
+                  placeholder="Опишите проблему или причину апелляции"
+                  className="form-input"
+                  rows={5}
+                />
+              </div>
+              <div className="form-group">
+                <label>Вложение (необязательно)</label>
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  className="form-input"
+                  accept="image/*,application/pdf,.doc,.docx"
+                />
+                {appealFile && (
+                  <div className="file-info">
+                    Выбран файл: {appealFile.name} ({(appealFile.size / 1024).toFixed(1)} КБ)
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="primary"
+                onClick={handleSubmitAppeal}
+                disabled={appealLoading || !appealComment.trim()}
+              >
+                {appealLoading ? "Отправка..." : "Отправить апелляцию"}
+              </button>
+              <button
+                className="secondary"
+                onClick={() => {
+                  setShowAppealForm(false);
+                  setAppealComment("");
+                  setAppealFile(null);
+                }}
+                disabled={appealLoading}
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
