@@ -41,8 +41,18 @@ export async function initDb() {
           'funded',
           'completed',
           'cancelled',
-          'dispute'
+          'dispute',
+          'item_transferred',
+          'item_received'
         );
+      else
+        -- Add new enum values if they don't exist
+        if not exists (select 1 from pg_enum where enumlabel = 'item_transferred' and enumtypid = (select oid from pg_type where typname = 'deal_status')) then
+          alter type deal_status add value 'item_transferred';
+        end if;
+        if not exists (select 1 from pg_enum where enumlabel = 'item_received' and enumtypid = (select oid from pg_type where typname = 'deal_status')) then
+          alter type deal_status add value 'item_received';
+        end if;
       end if;
     end$$;
 

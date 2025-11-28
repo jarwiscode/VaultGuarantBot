@@ -26,7 +26,28 @@ interface DealDetailScreenProps {
 }
 
 function isActiveDeal(status: string): boolean {
-  return status === "pending" || status === "accepted" || status === "funded";
+  return status === "pending" || status === "accepted" || status === "funded" || status === "item_transferred" || status === "item_received";
+}
+
+function getStatusLabel(status: string): string {
+  switch (status) {
+    case "pending":
+      return "Ожидает принятия";
+    case "accepted":
+      return "Принята, средства заморожены";
+    case "item_transferred":
+      return "Предмет передан";
+    case "item_received":
+      return "Предмет получен";
+    case "completed":
+      return "Завершена";
+    case "cancelled":
+      return "Отменена";
+    case "dispute":
+      return "Спор";
+    default:
+      return status;
+  }
 }
 
 export const DealDetailScreen: React.FC<DealDetailScreenProps> = ({
@@ -38,18 +59,22 @@ export const DealDetailScreen: React.FC<DealDetailScreenProps> = ({
   const [loading, setLoading] = useState(true);
   const [botUsername, setBotUsername] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  async function loadDeal() {
+    try {
+      const dealRes = await api.get(`/app/deals/${dealId}`);
+      setDeal(dealRes.data);
+    } catch (error) {
+      console.error("Failed to load deal", error);
+    }
+  }
 
   useEffect(() => {
     async function load() {
       setLoading(true);
-      try {
-        const dealRes = await api.get(`/app/deals/${dealId}`);
-        setDeal(dealRes.data);
-      } catch (error) {
-        console.error("Failed to load deal", error);
-      } finally {
-        setLoading(false);
-      }
+      await loadDeal();
+      setLoading(false);
     }
     load();
   }, [dealId]);
@@ -72,28 +97,148 @@ export const DealDetailScreen: React.FC<DealDetailScreenProps> = ({
     setSharing(true);
     try {
       const shareLink = `https://t.me/${botUsername}?start=deal_${deal.code}`;
+      const shareText = `Ссылка на сделку "${deal.title}": ${shareLink}`;
       
-      // Try to use Telegram WebApp API to open link
+      // Copy link to clipboard first
+      await navigator.clipboard.writeText(shareLink);
+      
+      // Try to use tg://share protocol to open share dialog
+      // This works better in Telegram WebApp context
+      const tgShareUrl = `tg://share?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(shareText)}`;
+      
+      // Try to use Telegram WebApp API
       if (window.Telegram?.WebApp?.openTelegramLink) {
-        window.Telegram.WebApp.openTelegramLink(shareLink);
+        try {
+          window.Telegram.WebApp.openTelegramLink(tgShareUrl);
+          setTimeout(() => setSharing(false), 300);
+          return;
+        } catch (e) {
+          // If tg://share doesn't work, try tg://msg
+          const tgMsgUrl = `tg://msg?text=${encodeURIComponent(shareText)}`;
+          try {
+            window.Telegram.WebApp.openTelegramLink(tgMsgUrl);
+            setTimeout(() => setSharing(false), 300);
+            return;
+          } catch (e2) {
+            // Fall through to clipboard notification
+          }
+        }
+      }
+      
+      // Fallback: show notification that link is copied
+      if (window.Telegram?.WebApp?.showAlert) {
+        window.Telegram.WebApp.showAlert("Ссылка скопирована! Теперь вы можете вставить её в любой чат.");
       } else {
-        // Fallback: copy to clipboard
+        alert("Ссылка скопирована! Теперь вы можете вставить её в любой чат.");
+      }
+      setSharing(false);
+    } catch (error) {
+      console.error("Failed to share", error);
+      // Even if sharing fails, try to copy link
+      try {
+        const shareLink = `https://t.me/${botUsername}?start=deal_${deal.code}`;
         await navigator.clipboard.writeText(shareLink);
         if (window.Telegram?.WebApp?.showAlert) {
           window.Telegram.WebApp.showAlert("Ссылка скопирована в буфер обмена!");
         } else {
           alert("Ссылка скопирована в буфер обмена!");
         }
+      } catch (e) {
+        if (window.Telegram?.WebApp?.showAlert) {
+          window.Telegram.WebApp.showAlert("Ошибка при создании ссылки");
+        } else {
+          alert("Ошибка при создании ссылки");
+        }
       }
-    } catch (error) {
-      console.error("Failed to share", error);
+      setSharing(false);
+    }
+  };
+
+  const handleAccept = async () => {
+    if (!deal) return;
+    setActionLoading(true);
+    try {
+      await api.post(`/app/deals/${dealId}/accept`);
+      await loadDeal();
       if (window.Telegram?.WebApp?.showAlert) {
-        window.Telegram.WebApp.showAlert("Ошибка при создании ссылки");
+        window.Telegram.WebApp.showAlert("Сделка принята! Средства заморожены на вашем счету.");
+      }
+    } catch (error: any) {
+      let message = "Ошибка при принятии сделки";
+      if (error.response?.data?.error === "INSUFFICIENT_FUNDS") {
+        message = "Недостаточно средств на вашем счету";
+      } else if (error.response?.data?.error === "CANNOT_ACCEPT_OWN_DEAL") {
+        message = "Вы не можете принять свою собственную сделку";
+      }
+      if (window.Telegram?.WebApp?.showAlert) {
+        window.Telegram.WebApp.showAlert(message);
       } else {
-        alert("Ошибка при создании ссылки");
+        alert(message);
       }
     } finally {
-      setSharing(false);
+      setActionLoading(false);
+    }
+  };
+
+  const handleTransfer = async () => {
+    if (!deal) return;
+    setActionLoading(true);
+    try {
+      await api.post(`/app/deals/${dealId}/transfer`);
+      await loadDeal();
+      if (window.Telegram?.WebApp?.showAlert) {
+        window.Telegram.WebApp.showAlert("Статус обновлен: предмет передан.");
+      }
+    } catch (error) {
+      if (window.Telegram?.WebApp?.showAlert) {
+        window.Telegram.WebApp.showAlert("Ошибка при обновлении статуса");
+      } else {
+        alert("Ошибка при обновлении статуса");
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleReceive = async () => {
+    if (!deal) return;
+    setActionLoading(true);
+    try {
+      await api.post(`/app/deals/${dealId}/receive`);
+      await loadDeal();
+      if (window.Telegram?.WebApp?.showAlert) {
+        window.Telegram.WebApp.showAlert("Сделка завершена! Средства переведены продавцу.");
+      }
+    } catch (error) {
+      if (window.Telegram?.WebApp?.showAlert) {
+        window.Telegram.WebApp.showAlert("Ошибка при завершении сделки");
+      } else {
+        alert("Ошибка при завершении сделки");
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!deal) return;
+    if (!confirm("Вы уверены, что хотите отменить сделку?")) return;
+    
+    setActionLoading(true);
+    try {
+      await api.post(`/app/deals/${dealId}/cancel`);
+      await loadDeal();
+      if (window.Telegram?.WebApp?.showAlert) {
+        window.Telegram.WebApp.showAlert("Сделка отменена.");
+      }
+    } catch (error) {
+      if (window.Telegram?.WebApp?.showAlert) {
+        window.Telegram.WebApp.showAlert("Ошибка при отмене сделки");
+      } else {
+        alert("Ошибка при отмене сделки");
+      }
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -102,7 +247,18 @@ export const DealDetailScreen: React.FC<DealDetailScreenProps> = ({
 
   const isBuyer = deal.buyer_id === currentUserId;
   const isSeller = deal.seller_id === currentUserId;
+  const isInitiator = deal.initiator_id === currentUserId;
   const active = isActiveDeal(deal.status);
+  
+  // Determine what actions are available
+  // Anyone except initiator can accept pending deal (becomes buyer)
+  const canAccept = !isInitiator && deal.status === "pending";
+  // Seller (initiator) can mark as transferred after acceptance
+  const canTransfer = isSeller && deal.status === "accepted";
+  // Buyer can mark as received after transfer
+  const canReceive = isBuyer && deal.status === "item_transferred";
+  // Initiator or participant can cancel if not completed
+  const canCancel = (isInitiator || isBuyer || isSeller) && deal.status !== "completed" && deal.status !== "cancelled";
 
   return (
     <div>
@@ -153,20 +309,11 @@ export const DealDetailScreen: React.FC<DealDetailScreenProps> = ({
 
         <div className="deal-detail-section">
           <div className="deal-detail-label">Статус</div>
-          <div className="deal-detail-value">{deal.status}</div>
+          <div className="deal-detail-value">{getStatusLabel(deal.status)}</div>
         </div>
       </div>
 
       <div className="card">
-        <div className="deal-detail-section">
-          <div className="deal-detail-label">
-            {isBuyer ? "Вы покупатель" : "Покупатель"}
-          </div>
-          <div className="deal-detail-value">
-            {isBuyer ? "Вы" : `ID: ${deal.buyer_id}`}
-          </div>
-        </div>
-
         <div className="deal-detail-section">
           <div className="deal-detail-label">
             {isSeller ? "Вы продавец" : "Продавец"}
@@ -175,6 +322,22 @@ export const DealDetailScreen: React.FC<DealDetailScreenProps> = ({
             {isSeller ? "Вы" : `ID: ${deal.seller_id}`}
           </div>
         </div>
+
+        {deal.status !== "pending" ? (
+          <div className="deal-detail-section">
+            <div className="deal-detail-label">
+              {isBuyer ? "Вы покупатель" : "Покупатель"}
+            </div>
+            <div className="deal-detail-value">
+              {isBuyer ? "Вы" : `ID: ${deal.buyer_id}`}
+            </div>
+          </div>
+        ) : (
+          <div className="deal-detail-section">
+            <div className="deal-detail-label">Покупатель</div>
+            <div className="deal-detail-value muted">Ожидает принятия сделки</div>
+          </div>
+        )}
       </div>
 
       <div className="card">
@@ -185,6 +348,49 @@ export const DealDetailScreen: React.FC<DealDetailScreenProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Action buttons */}
+      {(canAccept || canTransfer || canReceive || canCancel) && (
+        <div className="card">
+          {canAccept && (
+            <button
+              className="primary"
+              onClick={handleAccept}
+              disabled={actionLoading}
+            >
+              {actionLoading ? "Обработка..." : "Принять сделку"}
+            </button>
+          )}
+          {canTransfer && (
+            <button
+              className="primary mt-2"
+              onClick={handleTransfer}
+              disabled={actionLoading}
+            >
+              {actionLoading ? "Обработка..." : "Передал предмет"}
+            </button>
+          )}
+          {canReceive && (
+            <button
+              className="primary mt-2"
+              onClick={handleReceive}
+              disabled={actionLoading}
+            >
+              {actionLoading ? "Обработка..." : "Получил предмет"}
+            </button>
+          )}
+          {canCancel && (
+            <button
+              className="primary mt-2"
+              onClick={handleCancel}
+              disabled={actionLoading}
+              style={{ background: "#f87171" }}
+            >
+              {actionLoading ? "Обработка..." : "Отменить сделку"}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

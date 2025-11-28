@@ -10,6 +10,10 @@ interface Window {
       };
       ready: () => void;
       close: () => void;
+      expand: () => void;
+      onEvent?: (event: string, callback: () => void) => void;
+      setHeaderColor?: (color: string) => void;
+      setBackgroundColor?: (color: string) => void;
       openTelegramLink?: (url: string) => void;
       showAlert?: (message: string) => void;
       MainButton: {

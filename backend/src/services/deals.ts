@@ -20,8 +20,10 @@ export async function createDeal(input: CreateDealInput) {
   const commissionPercent = 1.0;
   const commissionAmount = (input.amount * commissionPercent) / 100;
 
-  const buyerId = input.initiatorId;
+  // Creator is the seller, buyer will be set when deal is accepted
   const sellerId = input.initiatorId;
+  // Set buyer_id to seller_id initially, will be updated when accepted
+  const buyerId = input.initiatorId;
 
   const res = await pool.query(
     `
@@ -81,10 +83,99 @@ export async function updateDealStatus(
     | "completed"
     | "cancelled"
     | "dispute"
+    | "item_transferred"
+    | "item_received"
 ) {
   const res = await pool.query(
     "update deals set status = $1, updated_at = now() where id = $2 returning *",
     [status, id]
   );
   return res.rows[0] ?? null;
+}
+
+export async function acceptDeal(dealId: number, userId: number) {
+  const deal = await getDealById(dealId);
+  if (!deal) {
+    throw new Error("DEAL_NOT_FOUND");
+  }
+
+  if (deal.status !== "pending") {
+    throw new Error("INVALID_DEAL_STATUS");
+  }
+
+  // Cannot accept own deal
+  if (deal.initiator_id === userId) {
+    throw new Error("CANNOT_ACCEPT_OWN_DEAL");
+  }
+
+  // Update buyer_id to the person who accepts
+  const res = await pool.query(
+    `
+      update deals 
+      set buyer_id = $1, status = 'accepted', updated_at = now() 
+      where id = $2 
+      returning *
+    `,
+    [userId, dealId]
+  );
+
+  return res.rows[0];
+}
+
+export async function markItemTransferred(dealId: number, userId: number) {
+  const deal = await getDealById(dealId);
+  if (!deal) {
+    throw new Error("DEAL_NOT_FOUND");
+  }
+
+  if (deal.status !== "accepted") {
+    throw new Error("INVALID_DEAL_STATUS");
+  }
+
+  // Only seller can mark as transferred
+  if (deal.seller_id !== userId) {
+    throw new Error("NOT_AUTHORIZED");
+  }
+
+  const updated = await updateDealStatus(dealId, "item_transferred");
+  return updated;
+}
+
+export async function markItemReceived(dealId: number, userId: number) {
+  const deal = await getDealById(dealId);
+  if (!deal) {
+    throw new Error("DEAL_NOT_FOUND");
+  }
+
+  if (deal.status !== "item_transferred") {
+    throw new Error("INVALID_DEAL_STATUS");
+  }
+
+  // Only buyer can mark as received
+  if (deal.buyer_id !== userId) {
+    throw new Error("NOT_AUTHORIZED");
+  }
+
+  const updated = await updateDealStatus(dealId, "item_received");
+  return updated;
+}
+
+export async function cancelDeal(dealId: number, userId: number) {
+  const deal = await getDealById(dealId);
+  if (!deal) {
+    throw new Error("DEAL_NOT_FOUND");
+  }
+
+  // Only buyer or seller can cancel
+  if (deal.buyer_id !== userId && deal.seller_id !== userId) {
+    throw new Error("NOT_AUTHORIZED");
+  }
+
+  // Can only cancel if not completed
+  if (deal.status === "completed") {
+    throw new Error("CANNOT_CANCEL_COMPLETED");
+  }
+
+  const updated = await updateDealStatus(dealId, "cancelled");
+  return updated;
 }

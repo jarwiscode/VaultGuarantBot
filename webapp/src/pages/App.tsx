@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useTelegramAuth } from "../hooks/useTelegramAuth";
 import { Loader } from "../components/Loader";
 import { api } from "../api";
+import { applyTelegramTheme } from "../theme";
 import { WalletScreen } from "./WalletScreen";
 import { DealsScreen } from "./DealsScreen";
 import { NewDealScreen } from "./NewDealScreen";
@@ -18,6 +19,8 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     window.Telegram?.WebApp?.ready();
+    // Re-apply theme when component mounts
+    applyTelegramTheme();
   }, []);
 
   useEffect(() => {

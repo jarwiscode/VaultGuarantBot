@@ -12,13 +12,15 @@ interface Deal {
   created_at: string;
 }
 
-type DealStatus = "pending" | "accepted" | "rejected" | "funded" | "completed" | "cancelled" | "dispute";
+type DealStatus = "pending" | "accepted" | "rejected" | "funded" | "completed" | "cancelled" | "dispute" | "item_transferred" | "item_received";
 
 function getStatusInfo(status: string): { label: string; color: string; bgColor: string } {
   switch (status as DealStatus) {
     case "pending":
     case "accepted":
     case "funded":
+    case "item_transferred":
+    case "item_received":
       return {
         label: "Активный",
         color: "#4ade80",
@@ -53,7 +55,7 @@ function getStatusInfo(status: string): { label: string; color: string; bgColor:
 }
 
 function isActiveDeal(status: string): boolean {
-  return status === "pending" || status === "accepted" || status === "funded";
+  return status === "pending" || status === "accepted" || status === "funded" || status === "item_transferred" || status === "item_received";
 }
 
 function formatDate(dateString: string): string {
