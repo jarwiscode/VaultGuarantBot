@@ -80,12 +80,22 @@ router.post("/deals", async (req: AuthRequest, res) => {
 
 router.get("/deals", async (req: AuthRequest, res) => {
   if (!req.userId) return res.status(401).json({ error: "UNAUTHORIZED" });
+  // Run auto-actions before returning deals to ensure they're up to date
+  const { runDealAutoActions } = await import("../services/dealAutoActions");
+  runDealAutoActions().catch((err) => {
+    console.error("Error running auto-actions in deals list:", err);
+  });
   const deals = await listUserDeals(req.userId);
   return res.json(deals);
 });
 
 router.get("/deals/:id", async (req: AuthRequest, res) => {
   if (!req.userId) return res.status(401).json({ error: "UNAUTHORIZED" });
+  // Run auto-actions before returning deal to ensure it's up to date
+  const { runDealAutoActions } = await import("../services/dealAutoActions");
+  runDealAutoActions().catch((err) => {
+    console.error("Error running auto-actions in deal detail:", err);
+  });
   const id = Number(req.params.id);
   const deal = await getDealById(id);
   if (!deal) return res.status(404).json({ error: "NOT_FOUND" });

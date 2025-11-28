@@ -8,6 +8,7 @@ import appRoutes from "./routes/app";
 import adminRoutes from "./routes/admin";
 import { createBot } from "./bot";
 import { setBotInstance } from "./services/notifications";
+import { runDealAutoActions } from "./services/dealAutoActions";
 
 async function main() {
   if (config.dbEnabled) {
@@ -46,6 +47,22 @@ async function main() {
     bot.start();
     // eslint-disable-next-line no-console
     console.log("Telegram bot started (long polling).");
+  }
+
+  // Run auto-actions on startup and then every minute
+  if (config.dbEnabled) {
+    runDealAutoActions().catch((err) => {
+      console.error("Error running initial auto-actions:", err);
+    });
+
+    setInterval(() => {
+      runDealAutoActions().catch((err) => {
+        console.error("Error running periodic auto-actions:", err);
+      });
+    }, 60 * 1000); // Every minute
+
+    // eslint-disable-next-line no-console
+    console.log("Deal auto-actions scheduler started (runs every minute).");
   }
 }
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { api } from "../api";
 import { Loader } from "../components/Loader";
 
@@ -65,14 +65,14 @@ export const DealDetailScreen: React.FC<DealDetailScreenProps> = ({
   const [appealFile, setAppealFile] = useState<File | null>(null);
   const [appealLoading, setAppealLoading] = useState(false);
 
-  async function loadDeal() {
+  const loadDeal = useCallback(async () => {
     try {
       const dealRes = await api.get(`/app/deals/${dealId}`);
       setDeal(dealRes.data);
     } catch (error) {
       console.error("Failed to load deal", error);
     }
-  }
+  }, [dealId]);
 
   useEffect(() => {
     async function load() {
@@ -82,6 +82,19 @@ export const DealDetailScreen: React.FC<DealDetailScreenProps> = ({
     }
     load();
   }, [dealId]);
+
+  // Poll for updates every 3 seconds if deal is active
+  useEffect(() => {
+    if (!deal || !isActiveDeal(deal.status)) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      loadDeal();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [deal?.status, deal?.id, loadDeal]);
 
   useEffect(() => {
     async function loadBotInfo() {
@@ -338,8 +351,14 @@ export const DealDetailScreen: React.FC<DealDetailScreenProps> = ({
   const canTransfer = isSeller && deal.status === "accepted";
   // Buyer can mark as received after transfer
   const canReceive = isBuyer && deal.status === "item_transferred";
-  // Initiator or participant can cancel if not completed
-  const canCancel = (isInitiator || isBuyer || isSeller) && deal.status !== "completed" && deal.status !== "cancelled";
+  // Only show cancel button if there are no other actions available
+  const canCancel = 
+    !canAccept && 
+    !canTransfer && 
+    !canReceive && 
+    (isInitiator || isBuyer || isSeller) && 
+    deal.status !== "completed" && 
+    deal.status !== "cancelled";
 
   return (
     <div>
@@ -502,7 +521,7 @@ export const DealDetailScreen: React.FC<DealDetailScreenProps> = ({
                 <label>Номер сделки</label>
                 <input
                   type="text"
-                  value={deal?.code || ""}
+                  value={deal ? deal.code : ""}
                   disabled
                   className="form-input"
                 />
